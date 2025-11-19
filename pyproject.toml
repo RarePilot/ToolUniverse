@@ -37,6 +37,7 @@ dependencies = [
     "flask>=2.0.0",
     "aiohttp",
     "beautifulsoup4>=4.12.0",
+    "python-dotenv>=1.0.0",
     "markitdown[all]>=0.1.0",
     "psutil>=5.9.0",
     "ddgs>=9.0.0",
@@ -133,6 +134,7 @@ generate-mcp-tools = "tooluniverse.generate_mcp_tools:run_generate"
 # Human Expert Feedback System
 tooluniverse-expert-feedback = "tooluniverse.remote.expert_feedback.human_expert_mcp_tools:main"
 tooluniverse-expert-feedback-web = "tooluniverse.remote.expert_feedback.start_web_interface:main"
+tu-datastore = "tooluniverse.database_setup.cli:main"
 # Literature Search Web UIs (Under testing)
 # tooluniverse-regular-search = "tooluniverse.web_tools.literature_search_ui.regular_search_app:main"
 # tooluniverse-agent-search = "tooluniverse.web_tools.literature_search_ui.agent_search_app:main"

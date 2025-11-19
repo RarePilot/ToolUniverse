@@ -437,7 +437,7 @@ class ToolUniverse:
                     try:
                         instance = tool_class(
                             tool_config=tool_config
-                        )  # ✅ 使用关键字参数
+                        )
                     except TypeError:
                         # If tool doesn't accept tool_config, try without parameters
                         instance = tool_class()
