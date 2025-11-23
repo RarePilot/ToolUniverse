@@ -15,6 +15,7 @@ def FAERS_count_reactions_by_drug_event(
     occurcountry: Optional[str] = None,
     serious: Optional[str] = None,
     seriousnessdeath: Optional[str] = None,
+    reactionmeddraverse: Optional[str] = None,
     *,
     stream_callback: Optional[Callable[[str], None]] = None,
     use_cache: bool = False,
@@ -37,6 +38,8 @@ def FAERS_count_reactions_by_drug_event(
         Optional: Filter by event seriousness. Omit this parameter if you don't want ...
     seriousnessdeath : str
         Optional: Filter for fatal outcomes. Omit this parameter if you don't want to...
+    reactionmeddraverse : str
+        Optional: Filter by MedDRA reaction term (Lowest Level Term). When omitted, r...
     stream_callback : Callable, optional
         Callback for streaming output
     use_cache : bool, default False
@@ -60,6 +63,7 @@ def FAERS_count_reactions_by_drug_event(
                 "occurcountry": occurcountry,
                 "serious": serious,
                 "seriousnessdeath": seriousnessdeath,
+                "reactionmeddraverse": reactionmeddraverse,
             },
         },
         stream_callback=stream_callback,

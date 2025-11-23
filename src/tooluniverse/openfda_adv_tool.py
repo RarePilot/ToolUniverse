@@ -106,8 +106,11 @@ class FDADrugAdverseEventTool(BaseTool):
         if validation_error:
             return {"error": validation_error}
 
+        # Store reactionmeddraverse for filtering results
+        reaction_filter = arguments.get("reactionmeddraverse")
+        
         response = self._search(arguments)
-        return self._post_process(response)
+        return self._post_process(response, reaction_filter=reaction_filter)
 
     def validate_enum_arguments(self, arguments):
         """Validate that enum-based arguments match the allowed values"""
@@ -118,25 +121,35 @@ class FDADrugAdverseEventTool(BaseTool):
                     return f"Invalid value '{value}' for parameter '{param_name}'. Allowed values are: {', '.join(allowed_values)}"
         return None
 
-    def _post_process(self, response):
+    def _post_process(self, response, reaction_filter=None):
         if not response or not isinstance(response, list):
             return []
-
-        if not self.return_fields_mapping:
-            return response
 
         mapped_results = []
         for item in response:
             try:
                 term = item.get("term")
                 count = item.get("count", 0)
-                mapped_term = self.return_fields_mapping.get(self.count_field, {}).get(
-                    str(term), term
-                )
-                mapped_results.append({"term": mapped_term, "count": count})
+                
+                # If reaction_filter is specified, only include matching reactions
+                if reaction_filter is not None:
+                    # Case-insensitive comparison
+                    if term and term.upper() != reaction_filter.upper():
+                        continue
+                
+                # Apply mapping if available
+                if self.return_fields_mapping:
+                    mapped_term = self.return_fields_mapping.get(self.count_field, {}).get(
+                        str(term), term
+                    )
+                    mapped_results.append({"term": mapped_term, "count": count})
+                else:
+                    mapped_results.append({"term": term, "count": count})
             except Exception:
                 # Keep the original term in case of an exception
-                mapped_results.append(item)
+                if reaction_filter is None or (isinstance(item, dict) and 
+                    item.get("term", "").upper() == reaction_filter.upper()):
+                    mapped_results.append(item)
 
         return mapped_results
 
@@ -158,13 +171,26 @@ class FDADrugAdverseEventTool(BaseTool):
                 continue  # Skip this field if instructed
 
             # Build search parts using FDA field name(s)
-            for fda_field_name in fda_fields:
+            # If multiple fields for same param, use OR logic within the param
+            if len(fda_fields) > 1:
+                # Multiple fields for same parameter - use OR
+                field_parts = []
+                for fda_field_name in fda_fields:
+                    if isinstance(mapped_value, str) and " " in mapped_value:
+                        field_parts.append(f'{fda_field_name}:"{mapped_value}"')
+                    else:
+                        field_parts.append(f"{fda_field_name}:{mapped_value}")
+                # Join multiple fields with OR
+                search_parts.append("+OR+".join(field_parts))
+            else:
+                # Single field - normal behavior
+                fda_field_name = fda_fields[0]
                 if isinstance(mapped_value, str) and " " in mapped_value:
                     search_parts.append(f'{fda_field_name}:"{mapped_value}"')
                 else:
                     search_parts.append(f"{fda_field_name}:{mapped_value}")
 
-        # Final search query
+        # Final search query - join different parameters with AND
         search_query = "+AND+".join(search_parts)
         search_encoded = urllib.parse.quote(search_query, safe='+:"')
 
@@ -404,13 +430,26 @@ class FDADrugAdverseEventDetailTool(BaseTool):
                 continue  # Skip this field if instructed
 
             # Build search parts using FDA field name(s)
-            for fda_field_name in fda_fields:
+            # If multiple fields for same param, use OR logic within the param
+            if len(fda_fields) > 1:
+                # Multiple fields for same parameter - use OR
+                field_parts = []
+                for fda_field_name in fda_fields:
+                    if isinstance(mapped_value, str) and " " in mapped_value:
+                        field_parts.append(f'{fda_field_name}:"{mapped_value}"')
+                    else:
+                        field_parts.append(f"{fda_field_name}:{mapped_value}")
+                # Join multiple fields with OR
+                search_parts.append("+OR+".join(field_parts))
+            else:
+                # Single field - normal behavior
+                fda_field_name = fda_fields[0]
                 if isinstance(mapped_value, str) and " " in mapped_value:
                     search_parts.append(f'{fda_field_name}:"{mapped_value}"')
                 else:
                     search_parts.append(f"{fda_field_name}:{mapped_value}")
 
-        # Final search query
+        # Final search query - join different parameters with AND
         search_query = "+AND+".join(search_parts)
         search_encoded = urllib.parse.quote(search_query, safe='+:"')
 

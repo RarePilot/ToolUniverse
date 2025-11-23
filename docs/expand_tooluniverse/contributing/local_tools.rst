@@ -17,7 +17,7 @@ Quick Overview
 1. **Environment Setup** - Fork, clone, install dependencies
 2. **Create Tool File** - Python class in ``src/tooluniverse/``
 3. **Register Tool** - Use ``@register_tool('Type')`` decorator
-4. **Create Config** - JSON file in ``data/my_new_tool_tools.json``
+4. **Create Config** - JSON file in ``data/xxx_tools.json``
 5. **🔑 Modify __init__.py** - Add tool in 4 locations (critical!)
 6. **Write Tests** - >90% coverage required
 7. **Code Quality** - Pre-commit hooks (automatic)
@@ -50,7 +50,7 @@ Step 1: Environment Setup
 Step 2: Create Tool File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create your tool file in ``src/tooluniverse/my_new_tool.py``:
+Create your tool file in ``src/tooluniverse/xxx_tool.py``:
 
 .. code-block:: python
 
@@ -85,7 +85,7 @@ The ``@register_tool('MyNewTool')`` decorator registers your tool class. Note th
 Step 4: Create Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create or edit ``src/tooluniverse/data/my_new_tool_tools.json``:
+Create or edit ``src/tooluniverse/data/xxx_tools.json``:
 
 .. code-block:: json
 
@@ -256,11 +256,6 @@ Create ``examples/my_new_tool/my_new_tool_example.py``:
    import os
    import sys
    
-   # Add src to path to ensure tooluniverse can be imported
-   sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
-   # Add current directory to path to import the tool class
-   sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-   
    # Import the tool class to register it
    from my_new_tool import MyNewTool  # noqa: E402, F401
    
@@ -311,10 +306,10 @@ Step 10: Submit Pull Request
    
    # Add all files
    git add src/tooluniverse/my_new_tool.py
-   git add src/tooluniverse/data/my_new_tool_tools.json
+   git add src/tooluniverse/data/xxx_tools.json
    git add src/tooluniverse/__init__.py
    git add tests/unit/test_my_new_tool.py
-   git add examples/my_new_tool/my_new_tool_example.py
+   git add examples/my_new_tool_example.py
    
    # Commit with descriptive message
    git commit -m "feat: add MyNewTool for text processing
@@ -341,7 +336,7 @@ Step 10: Submit Pull Request
    - ✅ **Tool Implementation**: Complete MyNewTool class
    - ✅ **Testing**: Unit tests with >95% coverage
    - ✅ **Documentation**: Comprehensive docstrings and examples
-   - ✅ **Configuration**: JSON config in data/my_new_tool_tools.json
+   - ✅ **Configuration**: JSON config in data/xxx_tools.json
    - ✅ **Integration**: Modified __init__.py in 4 locations
    
    ## Testing
