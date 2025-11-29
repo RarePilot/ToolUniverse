@@ -5686,7 +5686,7 @@ wheels = [
 
 [[package]]
 name = "tooluniverse"
-version = "1.0.13.1"
+version = "1.0.13.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -5714,6 +5714,7 @@ dependencies = [
     { name = "playwright" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "rcsb-api" },
     { name = "requests" },
@@ -5903,6 +5904,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.3.1" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "pyyaml", specifier = ">=6.0.0" },
     { name = "pyyaml", marker = "extra == 'space'", specifier = ">=6.0.0" },
     { name = "rcsb-api", specifier = ">=1.4.0" },
