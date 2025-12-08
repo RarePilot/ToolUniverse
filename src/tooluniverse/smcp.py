@@ -98,16 +98,9 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Union, Callable, Literal
 
-try:
-    from fastmcp import FastMCP
+from fastmcp import FastMCP
 
-    FASTMCP_AVAILABLE = True
-except ImportError:
-    # Use stderr to avoid polluting stdout in stdio mode
-    print(
-        "FastMCP is not available. SMCP is built on top of FastMCP, which is a required dependency.",
-        file=sys.stderr,
-    )
+FASTMCP_AVAILABLE = True
 
 from .execute_function import ToolUniverse
 from .logging_config import (
