@@ -307,10 +307,10 @@ def _match_language(langs: Optional[List[str]], want: str) -> bool:
             return True
     return False
 
-
 def _topic_search(
     topic: str,
     limit: int = 25,
+    top_k: int = 25,
     method: str = "hybrid",
     alpha: float = 0.5,
     country: str = "",
@@ -324,6 +324,8 @@ def _topic_search(
     -------------------
     limit : int = 25
         Max number of summaries to return.
+    top_k : int = 25
+        how many hits per seed term to pull from SearchEngine before dedupe.
     method : str = "hybrid"
         "keyword" | "embedding" | "hybrid". May be coerced to "keyword" for the shared build
         when the caller is not Azure + "text-embedding-3-small".
@@ -346,8 +348,11 @@ def _topic_search(
     - Themes: case-insensitive `startswith` against stored theme URIs.
     - Method may be auto-forced to "keyword" per the shared-build rule (see module docstring).
     """
+    # Enforce shared-build fallback rule
+    actual_method = _maybe_force_keyword(method)
 
-    method = _maybe_force_keyword(method)  # enforce shared-build rule
+    method = actual_method
+
     spec = TOPICS[topic]
     se = _se_singleton()
 
@@ -361,7 +366,7 @@ def _topic_search(
     results = []
     for t in terms:
         results.extend(
-            se.search_collection("euhealth", t, method=method, top_k=limit, alpha=alpha)
+            se.search_collection("euhealth", t, method=method, top_k=top_k, alpha=alpha)
         )
 
     if spec.get("themes"):
@@ -405,7 +410,8 @@ def _topic_search(
     if language:
         shaped = [s for s in shaped if _match_language(s.get("language", []), language)]
 
-    return shaped[:limit]
+    result = shaped[:limit]
+    return result
 
 
 # We consider the "shared/official" euhealth build to be the one embedded with text-embedding-3-small.
@@ -439,6 +445,14 @@ def _caller_is_azure_small() -> bool:
     mdl = (resolve_model(prov, None) or "").strip().lower()
     return prov == "azure" and mdl == _SHARED_MODEL_NAME
 
+def _env_supports_fts5() -> bool:
+    import sqlite3
+    try:
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE VIRTUAL TABLE t USING fts5(x)")
+        return True
+    except Exception:
+        return False
 
 def _maybe_force_keyword(method: str) -> str:
     """
@@ -450,10 +464,18 @@ def _maybe_force_keyword(method: str) -> str:
         * otherwise force 'keyword' (silent fallback)
     - If local `euhealth` is a custom build (any other model/provider, or missing model tag):
         * honor the requested method (no forcing)
+    - Enforce runtime FTS5 availability (Codex-safe)
+    - If euhealth.db is missing, all topic tools return a warning with empty results.
 
     This guarantees downloaded builds always work out of the box, while still letting
     advanced users build with any provider/model and keep full embedding/hybrid functionality.
     """
+    if not os.path.exists(_euhealth_db_path()):
+        return "missing_db"
+    
+    # 1. If runtime cannot do FTS5 → embedding/hybrid MUST fall back
+    if method in ("embedding", "hybrid") and not _env_supports_fts5():
+        return "keyword"
 
     if method == "keyword":
         return method
@@ -551,6 +573,17 @@ def euhealthinfo_deepdive(
 
     if topic and topic in TOPICS:
         method = _maybe_force_keyword(method)  # enforce before resolving seed
+        if method == "missing_db":
+            return {
+                "warning": (
+                    "EUHealth datastore not found locally (euhealth.db missing).\n"
+                    "Please download or build the euhealth collection.\n"
+                    "To install the official datastore:\n"
+                    "  export HF_TOKEN=YOUR_HF_TOKEN\n"
+                    "  tu-datastore sync-hf download --repo \"agenticx/tooluniverse-datastores\" --collection euhealth --overwrite\n"
+                ),
+                "results": [],
+            }
         seeds = _topic_search(
             topic,
             limit=limit,
@@ -588,15 +621,54 @@ for _fname in TOPICS.keys():
             limit: int = 25,
             method: str = "hybrid",
             alpha: float = 0.5,
+            top_k: int = 25,
             country: str = "",
             language: str = "",
             term_override: str = "",
         ):
+
+            # --- enforce fallback BEFORE SearchEngine is ever touched ---
+            actual_method = _maybe_force_keyword(method)
+            if actual_method == "missing_db":
+                return {
+                    "warning": (
+                        "EUHealth datastore not found locally (euhealth.db missing).\n"
+                        "Please download or build the euhealth collection.\n"
+                        "To install the official datastore:\n"
+                        "  export HF_TOKEN=YOUR_HF_TOKEN\n"
+                        "  tu-datastore sync-hf download --repo \"agenticx/tooluniverse-datastores\" --collection euhealth --overwrite\n"
+                    ),
+                    "results": [],
+                }
+
+            
+            if actual_method != method:
+                # run keyword version
+                results = _topic_search(
+                    name,
+                    limit=limit,
+                    method=actual_method,
+                    alpha=alpha,
+                    top_k=top_k,
+                    country=country,
+                    language=language,
+                    term_override=term_override,
+                )
+                return {
+                    "warning": (
+                        f"Requested '{method}' is not available without Azure + text-embedding-3-small. "
+                        f"Falling back to '{actual_method}'."
+                    ),
+                    "results": results,
+                }
+
+            # Normal case (no fallback)
             return _topic_search(
                 name,
                 limit=limit,
                 method=method,
                 alpha=alpha,
+                top_k=top_k,
                 country=country,
                 language=language,
                 term_override=term_override,

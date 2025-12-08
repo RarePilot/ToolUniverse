@@ -1,17 +1,25 @@
 """
-tu-datastore: CLI for building, searching, and syncing embedding datastores.
+tu-datastore: CLI for building, searching, syncing, and registering embedding datastores and tools.
 
 Subcommands
 -----------
 build
     Upsert a collection, insert documents (with de-dup), embed texts, and write FAISS.
+
 quickbuild
     Build a collection from a folder of text files (.txt/.md).
+
 search
     Query an existing collection by keyword, embedding, or hybrid.
-sync-hf upload|download
-    Upload/download <collection>.db and <collection>.faiss to/from Hugging Face and (on upload) optionally include --tool-json <file1.json> [file2.json ...].
 
+sync-hf upload|download
+    Upload/download <collection>.db and <collection>.faiss to/from Hugging Face and
+    (on upload) optionally include --tool-json <file1.json> [file2.json ...].
+
+add-tool
+    Copy a tool JSON into ~/.tooluniverse/data/user_tools for auto-loading by
+    ToolUniverse and Codex. This enables users to create their own tools from
+    local JSON definitions without modifying the ToolUniverse repo.
 
 Environment
 -----------
@@ -23,9 +31,12 @@ Exit codes
 0 on success; non-zero on I/O, validation, or runtime errors.
 """
 
+
 import argparse
 import json
 import os
+import shutil
+from pathlib import Path
 from .pipeline import build_collection, search
 from .hf.sync_hf import upload as sync_upload, download as sync_download
 from .packager import pack_folder
@@ -52,6 +63,32 @@ def resolve_provider_model(provider_arg, model_arg):
         )
     return provider, model
 
+USER_TOOLS_DIR = os.path.expanduser("~/.tooluniverse/data/user_tools")
+
+
+def add_tool(json_file: str, name: str | None = None, overwrite: bool = False):
+    """Copy a tool JSON into ~/.tooluniverse/data/user_tools for auto-loading."""
+    src = Path(json_file).expanduser()
+    if not src.exists() or not src.is_file():
+        raise SystemExit(f"[ERROR] Tool JSON not found: {src}")
+
+    os.makedirs(USER_TOOLS_DIR, exist_ok=True)
+
+    if name is None:
+        name = src.name
+    if not name.endswith(".json"):
+        name = name + ".json"
+
+    dest = Path(USER_TOOLS_DIR) / name
+    if dest.exists() and not overwrite:
+        raise SystemExit(
+            f"[ERROR] A tool file named '{name}' already exists at {dest}.\n"
+            f"Use --overwrite if you want to replace it."
+        )
+
+    shutil.copyfile(src, dest)
+    print(f"[INFO] Copied tool JSON to: {dest}")
+    print("[INFO] Any ToolUniverse/Codex instance that reads ~/.tooluniverse/data/user_tools will now see this tool.")
 
 def main():
     p = argparse.ArgumentParser(
@@ -145,6 +182,25 @@ def main():
     )
 
     # --------------------------------------------------------------------------
+    # add-tool
+    # --------------------------------------------------------------------------
+    at = sub.add_parser(
+        "add-tool",
+        help="Register a tool JSON in ~/.tooluniverse/data/user_tools for auto-loading",
+    )
+    at.add_argument("json_file", help="Path to tool JSON file")
+    at.add_argument(
+        "--name",
+        help="Optional filename to use under ~/.tooluniverse/data/user_tools "
+             "(default = source filename)",
+    )
+    at.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing file if the same name already exists",
+    )
+
+    # --------------------------------------------------------------------------
     # Parse
     # --------------------------------------------------------------------------
     args = p.parse_args()
@@ -233,6 +289,12 @@ def main():
                 overwrite=args.overwrite,
                 include_tools=args.include_tools,
             )
+    elif args.cmd == "add-tool":
+        add_tool(
+            json_file=args.json_file,
+            name=args.name,
+            overwrite=args.overwrite,
+        )
 
     else:
         p.print_help()

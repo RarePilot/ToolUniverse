@@ -14,8 +14,9 @@ What you’ll do
 1. Install ToolUniverse  
 2. Choose an embedding service (OpenAI, Azure, Hugging Face, or local)  
 3. Build your **collection** — your searchable library  
-4. Create an **agent tool JSON** that points to it  
-5. (Optional) Share it via Hugging Face for others to use  
+4. Create an **agent tool JSON** that points to it
+5. Install your tool so ToolUniverse/Codex auto-detects it
+6. (Optional) Share it via Hugging Face for others to use  
 
 ---
 
@@ -40,6 +41,17 @@ run the module directly:
 .. code-block:: bash
 
    python -m tooluniverse.database_setup.cli --help
+
+### Available ``tu-datastore`` commands
+
+.. code-block:: text
+
+   build            # Build from JSON
+   quickbuild       # Build from folder
+   search           # Keyword/embedding/hybrid search
+   sync-hf upload   # Upload DB/FAISS (+ tool JSONs)
+   sync-hf download # Download DB/FAISS (+ tool JSONs)
+   add-tool         # Install a tool JSON into ~/.tooluniverse/data/user_tools
 
 ---
 
@@ -158,7 +170,7 @@ Note:
 4. Create the agent tool for your collection
 -----------------------------------------
 
-Now the last step is to tell ToolUniverse how agents should access your dataset by creating a small **tool JSON**.
+Now the last step is to tell ToolUniverse how agents should search your dataset by creating a small **tool JSON**.
 
 Example:
 Save as ``toy_search_tool.json``:
@@ -170,7 +182,7 @@ Save as ``toy_search_tool.json``:
        "name": "toy_search", # choose an appropriate name for your tool 
        "description": "Provides biology data on cells, mitochondria, endocrine topics, and insulin.",  # make sure "description" is as detailed as possible so the agent gets a good explanation of what your data is
        "type": "EmbeddingCollectionSearchTool",
-       "fields": {"collection": "toy"} # name of the data collection this tool will look into,
+       "fields": {"collection": "toy"}, # name of the data collection this tool will look into
        "parameter": {
          "type": "object",
          "properties": {
@@ -186,22 +198,55 @@ Save as ``toy_search_tool.json``:
 
 > **Note:** Tool files must be a JSON **array** (even if only one tool).
 
+If you want your tool to load automatically in all ToolUniverse or Codex sessions (explained below):
+
+.. code-block:: bash
+
+   tu-datastore add-tool toy_search_tool.json
+
+---
+
+5. Install your tool for automatic discovery (recommended)
+-----------------------------------------------------------
+
+ToolUniverse automatically loads any tool placed in:
+
+```
+
+~/.tooluniverse/data/user_tools/
+
+```
+
+Install your tool with:
+
+.. code-block:: bash
+
+   tu-datastore add-tool toy_search_tool.json
+
+This copies your tool into the auto-load directory:
+
+```
+
+~/.tooluniverse/data/user_tools/toy_search_tool.json
+
+```
+
+Optional arguments:
+
+.. code-block:: bash
+
+   tu-datastore add-tool toy_search_tool.json --name toy.json
+   tu-datastore add-tool toy_search_tool.json --overwrite # overwrites json file if exists
+
+Once installed, **any ToolUniverse or Codex session** will immediately expose your tool:
+
+```
+
+tu.tools.toy_search(...)
+
+```
+
 **You are done! ToolUniverse agents now have access to your data collection and associated tool to use in their work as an AI Scientist!**
-
-Agents (or you) can also load it directly if desired:
-
-.. code-block:: python
-
-   from tooluniverse.tool_universe import ToolUniverse 
-
-   tu = ToolUniverse()
-   tu.load_tools(tool_config_files={"local": "toy_search_tool.json"})
-
-   results = tu.tools.toy_search(query="glucose", method="hybrid", top_k=5)
-   print(results)
-
-Results include ``doc_key``, ``text``, ``metadata``, ``score``, and a short snippet.
-
 
 How it works
 ------------
@@ -218,7 +263,7 @@ ToolUniverse automatically resolves paths in ``<user_cache_dir>/embeddings/``.
 
 ---
 
-5. Share or back up via Hugging Face (optional)
+6. Share or back up via Hugging Face (optional)
 --------------------------------------------
 
 After making your agent-searchable dataset you can share it publicly. You can also download other's public agent-searchable datasets and their tools so that you can use the community's data and tools in your research!
@@ -261,6 +306,7 @@ How it works
 
 -------------------------------------------------------------
 
+
 Optional
 --------
 
@@ -293,7 +339,12 @@ If you’re prototyping in a notebook or wiring custom logic, you can directly s
      }
    ]
 
-Programmatic use of customized tools (rather than automatic agent use)
+   
+
+Optional (for developers):
+--------------------------
+
+Programmatic use of customized tools (rather than agent use)
 ------------------------------------------------------------------
 
 **A) Create and run your tool directly in Python (no agent)**
@@ -310,7 +361,7 @@ Programmatic use of customized tools (rather than automatic agent use)
 
 .. code-block:: python
 
-   from tooluniverse.tool_universe import ToolUniverse
+   from tooluniverse import ToolUniverse
    from tooluniverse.database_setup.generic_embedding_search_tool import EmbeddingCollectionSearchTool
 
    tu = ToolUniverse()
@@ -341,7 +392,7 @@ This lets you interact with your tool exactly the way an agent would but directl
 
 .. code-block:: python
 
-   from tooluniverse.tool_universe import ToolUniverse
+   from tooluniverse import ToolUniverse
 
    tu = ToolUniverse()
    tu.load_tools(tool_config_files={"local": "toy_search_tool.json"})
@@ -350,7 +401,7 @@ This lets you interact with your tool exactly the way an agent would but directl
    results = tu.tools.toy_search(query="glucose", method="hybrid", top_k=5)
    print(results)
 
-Results include doc_key, text, metadata, score, and a short snippet.
+Results contain: ``doc_key``, ``text``, ``metadata``, ``score``, and a short snippet.
 
 -------------------------------------------------------------
 
@@ -368,10 +419,13 @@ Mini FAQ
 
 - **“No results”?** Try ``--method keyword`` or confirm the ``--collection`` name.  
 
-- **Where are my files stored locally?** ``<user_cache_dir>/embeddings/``. Examples:  
+- **Where are my searchable datasets stored locally?** ``<user_cache_dir>/embeddings/``. Examples:  
   - macOS → ``~/Library/Caches/ToolUniverse``  
   - Linux → ``~/.cache/tooluniverse``  
   - Windows → ``%LOCALAPPDATA%\\ToolUniverse``  
+
+- **Where do my tools live?**  
+  ``~/.tooluniverse/data/user_tools/`` (auto-loaded)
   
 - **Where does my data upload?** ``tu-datastore sync-hf upload`` targets your **own** HF account by default (based on your token).  
 
@@ -381,7 +435,7 @@ Mini FAQ
   - Use the example JSON under ``docs/tools/``, set ``"fields.collection"`` to your collection (e.g., ``"toy"``), and load it
   - If you prefer not to create a JSON, you can also instantiate the tool directly from Python and pass the collection name via ``fields``
 
-- **Can I upload my tool JSON with the datastore?** Yes, pass one or more files via ``--tool-json`` during ``sync-hf upload``; they’re stored at the dataset root.
+- **Can I upload my tool with the datastore?** Yes, pass one or more files via ``--tool-json`` during ``sync-hf upload``; they’re stored at the dataset root.
 
 - **How do I pull tool JSONs too?** Use ``--include-tools`` with ``sync-hf download`` to download any ``*.json`` in the dataset.
 
@@ -396,11 +450,7 @@ Mini FAQ
 
 .. code-block:: bash
 
-    tu-datastore build 
-    --collection toy 
-    --docs-json my.json 
-    --provider openai 
-    --model text-embedding-3-small 
+    tu-datastore build --collection toy --docs-json my.json --provider openai --model text-embedding-3-small 
 
 - **Can I have JSON files in a folder I use with 'quickbuild'?** `quickbuild` does **not** read JSON files in a folder; use `build --docs-json` for JSON ingestion.
 

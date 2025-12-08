@@ -4,6 +4,7 @@ from .search import SearchEngine
 from .sqlite_store import SQLiteStore
 from .vector_store import VectorStore
 from .embedder import Embedder
+from .generic_embedding_search_tool import EmbeddingCollectionSearchTool
 
 __all__ = [
     "build_collection",
@@ -14,4 +15,5 @@ __all__ = [
     "SQLiteStore",
     "VectorStore",
     "Embedder",
+    "EmbeddingCollectionSearchTool",
 ]

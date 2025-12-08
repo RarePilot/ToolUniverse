@@ -116,6 +116,31 @@ def safe_for_fts(query: str) -> str:
     q = q.strip('"').strip("'")
     return q.strip()
 
+def _ensure_fts5(conn):
+    """
+    Ensure that the current sqlite3 build supports FTS5.
+    Raise a user-friendly error if not.
+    """
+    try:
+        conn.execute("CREATE VIRTUAL TABLE temp._fts5_test USING fts5 (x);")
+        conn.execute("DROP TABLE temp._fts5_test;")
+    except Exception:
+        raise RuntimeError(
+            "\nERROR: SQLite in your Python environment is missing FTS5 support.\n"
+            "FTS5 is required for keyword/hybrid search in ToolUniverse.\n\n"
+            "To fix this:\n"
+            "  Option 1 (Recommended): Use Homebrew Python *and* Homebrew SQLite:\n"
+            "      brew install sqlite\n"
+            "      brew install python@3.12\n"
+            "      opt/homebrew/bin/python3.12 -m venv .venv\n"
+            "      source .venv/bin/activate\n"
+            "      pip install -e .\n\n"
+            "  Option 2: Use pysqlite3-binary:\n"
+            "      pip install pysqlite3-binary\n\n"
+            "  Option 3: Build your own EUHealth datastore locally with tu-datastore,\n"
+            "            which ships with FTS5 enabled.\n"
+        )
+
 
 class SQLiteStore:
     """Lightweight SQLite store with FTS5 mirror and vector bookkeeping.
@@ -127,6 +152,7 @@ class SQLiteStore:
     def __init__(self, path: str):
         self.path = Path(path)
         self.conn = sqlite3.connect(self.path)
+        _ensure_fts5(self.conn)
         self.conn.execute("PRAGMA journal_mode=WAL;")
         self.conn.execute("PRAGMA synchronous=NORMAL;")
         self.conn.executescript(SCHEMA)

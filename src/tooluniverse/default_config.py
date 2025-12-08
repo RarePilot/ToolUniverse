@@ -207,6 +207,15 @@ default_tool_files = {
     "compact_mode": os.path.join(current_dir, "data", "compact_mode_tools.json"),
 }
 
+# Auto-load any user-provided tools from ~/.tooluniverse/user_tools/
+user_tools_dir = os.path.expanduser("~/.tooluniverse/data/user_tools")
+
+if os.path.exists(user_tools_dir):
+    for filename in os.listdir(user_tools_dir):
+        if filename.endswith(".json"):
+            key = f"user_{filename.replace('.json', '')}"
+            default_tool_files[key] = os.path.join(user_tools_dir, filename)
+
 
 def get_default_hook_config():
     """

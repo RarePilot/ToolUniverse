@@ -24,7 +24,7 @@ See also
 - cli.py for command-line usage
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from tooluniverse.database_setup.sqlite_store import SQLiteStore
 from tooluniverse.database_setup.vector_store import VectorStore
@@ -60,13 +60,25 @@ class SearchEngine:
     - If a collection's `embedding_model` is "precomputed", you MUST pass (provider, model)
       when calling `embedding_search` or `hybrid_search`.
     """
-
     def __init__(self, db_path: str = "embeddings.db"):
         self.sqlite = SQLiteStore(db_path)
         self.vectors = VectorStore(db_path)
+        # Lazy embedder, only created if/when user actually does embedding.
+        self.embedder: Optional[Embedder] = None
+
+    def _get_default_embedder(self) -> Embedder:
+        """Return a lazily constructed default Embedder.
+
+        This avoids importing sentence_transformers (for provider=='local')
+        unless we *actually* perform an embedding or hybrid search.
+        """
+        if self.embedder is not None:
+            return self.embedder
+
         prov = resolve_provider()
         mdl = resolve_model(prov)
         self.embedder = Embedder(provider=prov, model=mdl)
+        return self.embedder
 
     def _get_collection_meta(self, collection: str):
         cur = self.sqlite.conn.execute(
@@ -108,10 +120,12 @@ class SearchEngine:
         )
 
         # instantiate a per-call embedder if needed to match the collection
-        emb = self.embedder
-        if (getattr(self.embedder, "model", None) != model) or (
+        base_emb = self._get_default_embedder()
+        emb = base_emb
+        if (getattr(base_emb, "model", None) != model) or (
             col_dim and self.vectors.dimensions.get(collection) != col_dim
         ):
+            # collection was built with a different model – use a fresh embedder
             emb = Embedder(provider=prov, model=model)
 
         q = emb.embed([query])[0]
