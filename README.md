@@ -1,3 +1,38 @@
+# RarePilot 分支
+
+> 这是基于[ToolUniverse](https://github.com/mims-harvard/ToolUniverse/tree/a5a696db6594e82fdab694c37448a3eda33f7c85)构建的罕见病/医疗工具分支，由RarePilot维护！
+
+## 安装
+
+```bash
+# Clone the repository
+git clone https://github.com/RarePilot/ToolUniverse.git
+
+# Install in editable mode（用户）
+pip install -e .
+
+# Install development dependencies （开发者）
+pip install -e .[dev]
+```
+
+## 测试
+
+```python
+# 1. Create tool environment
+from tooluniverse import ToolUniverse
+
+tu = ToolUniverse()
+tu.load_tools()  # Load all 600+ tools
+
+# 2. Query scientific databases
+result = tu.run({
+    "name": "OpenTargets_get_associated_targets_by_disease_efoId",
+    "arguments": {"efoId": "EFO_0000537"}  # hypertension
+})
+```
+
+---
+
 # <img src="docs/_static/logo.png" alt="ToolUniverse Logo" height="28" style="vertical-align: middle; margin-right: 8px;" /> ToolUniverse: Democratizing AI scientists
 
 [![Paper](https://img.shields.io/badge/Paper-Arxiv-blue)](https://arxiv.org/abs/2509.23426)
