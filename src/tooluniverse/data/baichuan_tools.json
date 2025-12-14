@@ -1,0 +1,26 @@
+[
+  {
+    "name": "baichuan_tool",
+    "type": "BaiChuanTool",
+    "description": "Evidence-enhanced medical large language model with support for retrieving medical journal articles",
+    "parameter": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Evidence-enhanced medical large language model with support for retrieving medical journal articles"
+        }
+      },
+      "required": ["input"]
+    },
+    "examples": [
+      {
+        "description": "Evidence-enhanced medical large language model with support for retrieving medical journal articles",
+        "arguments": {"input": "25岁健康女性种植牙，刚做完植入种植体，请问手术后是否需要服用抗生素"}
+      }
+    ],
+    "tags": ["text", "utility"],
+    "author": "WangRongsheng <wrs6@88.com>",
+    "version": "1.0.0"
+  }
+]

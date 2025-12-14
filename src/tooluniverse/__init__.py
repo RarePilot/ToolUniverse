@@ -202,6 +202,8 @@ MPDRESTTool: Any
 WoRMSRESTTool: Any
 PaleobiologyRESTTool: Any
 OLSTool: Any
+# Rongsheng tools
+BaiChuanTool: Any
 if not _LIGHT_IMPORT and not LAZY_LOADING_ENABLED:
     # Import all tool classes immediately (old behavior) with warning suppression  # noqa: E501
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -316,6 +318,9 @@ if not _LIGHT_IMPORT and not LAZY_LOADING_ENABLED:
         ClinVarGetVariantDetails,
         ClinVarGetClinicalSignificance,
     )
+
+    # Ronsheng tools
+    from .baichuan_tool import BaiChuanTool
 
     # Literature search tools
     from .arxiv_tool import ArXivTool
@@ -460,6 +465,9 @@ else:
         "pypi_package_inspector_tool", "PyPIPackageInspector"
     )
 
+    # Rongsheng tools
+    BaiChuanTool = _LazyImportProxy("baichuan_tool", "BaiChuanTool")
+
 __all__ = [
     "__version__",
     "ToolUniverse",
@@ -565,4 +573,6 @@ __all__ = [
     "ClinVarSearchVariants",
     "ClinVarGetVariantDetails",
     "ClinVarGetClinicalSignificance",
+    # Rongsheng tools
+    "BaiChuanTool"
 ]

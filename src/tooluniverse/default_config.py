@@ -207,6 +207,7 @@ default_tool_files = {
     "optimizer": os.path.join(current_dir, "data", "optimizer_tools.json"),
     # Compact mode core tools
     "compact_mode": os.path.join(current_dir, "data", "compact_mode_tools.json"),
+    "baichuan": os.path.join(current_dir, "data", "baichuan_tools.json"),
 }
 
 # Auto-load any user-provided tools from ~/.tooluniverse/user_tools/
