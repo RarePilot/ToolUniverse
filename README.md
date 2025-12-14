@@ -29,6 +29,8 @@ result = tu.run({
     "name": "OpenTargets_get_associated_targets_by_disease_efoId",
     "arguments": {"efoId": "EFO_0000537"}  # hypertension
 })
+
+print(result)
 ```
 
 ---
