@@ -206,6 +206,7 @@ OLSTool: Any
 BaiChuanTool: Any
 PubMedRetrieverTool: Any
 WikipediaRetrieverTool: Any
+HPONormalizationTool: Any
 if not _LIGHT_IMPORT and not LAZY_LOADING_ENABLED:
     # Import all tool classes immediately (old behavior) with warning suppression  # noqa: E501
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -331,6 +332,7 @@ if not _LIGHT_IMPORT and not LAZY_LOADING_ENABLED:
     from .pubmed_tool import PubMedTool
     from .pubmed_retriever_tool import PubMedRetrieverTool
     from .wikipedia_retriever_tool import WikipediaRetrieverTool
+    from .hpo_normalization_tool import HPONormalizationTool
     from .doaj_tool import DOAJTool
     from .unpaywall_tool import UnpaywallTool
     from .biorxiv_tool import BioRxivTool
@@ -456,6 +458,9 @@ else:
     WikipediaRetrieverTool = _LazyImportProxy(
         "wikipedia_retriever_tool", "WikipediaRetrieverTool"
     )
+    HPONormalizationTool = _LazyImportProxy(
+        "hpo_normalization_tool", "HPONormalizationTool"
+    )
     DOAJTool = _LazyImportProxy("doaj_tool", "DOAJTool")
     UnpaywallTool = _LazyImportProxy("unpaywall_tool", "UnpaywallTool")
     BioRxivTool = _LazyImportProxy("biorxiv_tool", "BioRxivTool")
@@ -569,6 +574,7 @@ __all__ = [
     "PubMedTool",
     "PubMedRetrieverTool",
     "WikipediaRetrieverTool",
+    "HPONormalizationTool",
     "DOAJTool",
     "UnpaywallTool",
     "BioRxivTool",
