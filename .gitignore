@@ -148,4 +148,4 @@ docs/api/tooluniverse.*.rst
 src/tooluniverse/web_tools/
 
 # Auto-generated tool files (moved to temporary folder)
-src/tooluniverse/tools_generated/
+src/tooluniverse/tools_generated/data/human-phenotype-ontology/hpo_embeddings.npy
